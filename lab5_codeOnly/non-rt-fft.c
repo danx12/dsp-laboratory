@@ -5,86 +5,64 @@
  *      Author: villarrealh
  */
 
-#include "dsk6713_aic23.h"
-#include "math.h"
-Uint32 samprate = DSK6713_AIC23_FREQ_16KHZ;
+#include "complex.h"
+#include <math.h>
 
-extern far void vectors();  //  this is needed to find the vecs.asm file for int processing
-void init_DSK(void);
-void init_Mcbsp1(void);
-void init_Ints(void);
+extern void fft();
 
-union {
-	Uint32 two;
-	short lr[2];
-}  AIC_data;
-
-
-#define sampling_rate 16000.
-#define freq_left 1003.
-#define freq_right 2000.
-#define scale 10000.0
+#define sampling_rate 8000.0
+#define fo 1000.0
 #define pi 3.141592653589
+#define N 512
 
-/* phase increment left for sine wave */
-float delta_left = 2.0*pi*freq_left/sampling_rate;
-/* phase increment for right sine wave */
-float delta_right = 2.0*pi*freq_right/sampling_rate;
+/* phase increment for sine wave */
+float delta1= 2.0*pi*fo/sampling_rate;
+float delta2 = 2.0*pi*((1000 + 0.5*(sampling_rate/N)))/N;
 
-float thetal = pi;
-float thetar = pi;
+float theta = 0;
 
+complex xn[N];
+float mag[N];
 
-//Prototype
-interrupt void tx_isr(void);
+int M = 9;
+
 
 void main()
 {
 
 	init_DSK();
-	init_Mcbsp1();
-	init_Ints();
-
-	IRQ_reset(IRQ_EVT_XINT1);
-	IRQ_map(IRQ_EVT_XINT1,11);
-	IRQ_nmiEnable();
-	IRQ_globalEnable();
-	IRQ_enable(IRQ_EVT_XINT1);
-	IRQ_hook(11,tx_isr);
 
 
-	MCBSP_write(DSK6713_AIC23_DATAHANDLE, scale);
-
-	while(1)
-	{
+	while(1){
+		generate_sine(xn,N);
+		fft(xn,M);
+		int i = 0;
+		for(int i = 0; i < N; i++){
+			mag[i] = pow((double) (sineArray[i]).real),2) + pow((double) (sineArray[i]).imag,2);
+		}
+		for(i = 0; i < 5; i++){
+			// dn
+		}
 
 	}
 
-} // end main
+} 
 
 
 
-interrupt void tx_isr(void){
+void generate_sine(complex* sineArray, int size){
+
+	int i = 0;
+	for(int i =0; i < size; i++){
+		(sineArray[i]).real = sin(theta);
+    	(sineArray[i]).imag = 0.0;
 
 
-	AIC_data.lr[0] = scale*sin(thetal);
-	AIC_data.lr[1] = scale*sin(thetar);
+		theta += delta1;
 
-	thetal += delta_left;
-	thetar += delta_right;
-
-
-	if(thetal > 2.0*pi){
-		thetal -=  2*pi;
-
+		if(theta > 2.0*pi){
+			theta -=  2*pi;
+		}
 	}
-
-	if(thetar > 2.0*pi){
-
-		thetar -=  2*pi;
-	}
-
-
-	MCBSP_write(DSK6713_AIC23_DATAHANDLE, AIC_data.two);
 }
 
