@@ -24,7 +24,7 @@ union {
 
 //echo controls
 #define scale 10000.0
-#define N 3000
+#define N 5760
 
 short leftBuffer[N];
 short rightBuffer[N];
